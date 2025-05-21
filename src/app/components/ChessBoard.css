@@ -1,0 +1,85 @@
+.chess-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+}
+
+.chess-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr); /* 8 equal columns */
+    grid-template-rows: repeat(8, 1fr); /* 8 equal rows */
+    width: 400px;
+    height: 400px;
+    border: 2px solid black;
+    position: relative;
+}
+
+.chess-square {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.chess-square.light {
+    background-color: #f0d9b5; /* Light square color */
+}
+
+.chess-square.dark {
+    background-color: #b58863; /* Dark square color */
+}
+
+.chess-square.highlight {
+    background-color: rgba(255, 255, 0, 0.3); /* Yellow highlight with 30% transparency */
+}
+
+.chess-square.last-move {
+    background-color: rgba(0, 255, 0, 0.3); /* Green highlight for the last moved cell */
+}
+
+.chess-square.green-highlight {
+    background-color: rgba(0, 255, 0, 0.3); /* Green highlight for moves */
+}
+
+.chess-square.yellow-highlight {
+    background-color: rgba(255, 255, 0, 0.3); /* Yellow highlight for selected empty cells */
+}
+
+.chess-piece {
+    font-size: 32px; /* Adjust size of the chess pieces */
+}
+
+.row-label {
+    position: absolute;
+    left: -20px; /* Position the row label outside the left edge */
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+.column-label {
+    position: absolute;
+    bottom: -20px; /* Position the column label outside the bottom edge */
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+.flip-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.flip-button:hover {
+    background-color: #005bb5;
+}
