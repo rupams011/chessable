@@ -9,7 +9,9 @@ import {
     Color,
     PieceType,
     pieceMoveFunctions,
-} from './chessRules'; // Import chess rules
+    GameState,
+    Move,
+} from './chessRules'; // Import chess rules (with special moves support)
 
 // Helper: Map Unicode to PieceType and Color
 const unicodeToPiece: Record<string, { type: PieceType; color: Color }> = {
@@ -83,6 +85,14 @@ const ChessBoard: React.FC = () => {
     const [yellowHighlight, setYellowHighlight] = useState<{ row: number; col: number } | null>(null);
     const [validMoves, setValidMoves] = useState<Position[]>([]); // Store valid moves for selected piece
 
+    // --- Special move state for castling and en passant ---
+    // Track which pieces have moved (for castling)
+    const [hasMoved, setHasMoved] = useState<{ [key: string]: boolean }>({});
+    // Track en passant target square (if any)
+    const [enPassantTarget, setEnPassantTarget] = useState<Position | null>(null);
+    // Track move history for en passant
+    const [moveHistory, setMoveHistory] = useState<Move[]>([]);
+
     // Generate row and column labels dynamically based on the board orientation
     const rows = isFlipped ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
     const columns = isFlipped ? ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'] : ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -97,31 +107,138 @@ const ChessBoard: React.FC = () => {
     const isValidMove = (row: number, col: number) =>
         validMoves.some(move => move.x === col && move.y === row);
 
+    // Helper to build GameState for rules
+    function getGameState(board: Board): GameState {
+        return {
+            board,
+            moveHistory,
+            hasMoved,
+            enPassantTarget,
+        };
+    }
+
+    // --- Enhanced move logic for castling and en passant ---
     const handleSquareClick = (row: number, col: number) => {
         const { actualRow, actualCol } = getActualIndices(row, col);
 
         if (selectedCell) {
-            // If the clicked square is a valid move, move the piece
             if (isValidMove(actualRow, actualCol)) {
                 const { row: selectedRow, col: selectedCol } = selectedCell;
-                const newBoard = board.map((r, rowIndex) =>
-                    r.map((square, colIndex) => {
-                        if (rowIndex === actualRow && colIndex === actualCol) {
-                            return board[selectedRow][selectedCol];
-                        }
-                        if (rowIndex === selectedRow && colIndex === selectedCol) {
-                            return null;
-                        }
-                        return square;
-                    })
-                );
+                const pieceChar = board[selectedRow][selectedCol];
+                const pieceInfo = pieceChar ? unicodeToPiece[pieceChar] : null;
+                const pieceBoard = convertToPieceBoard(board);
+
+                // Prepare GameState for rules
+                const gameState = getGameState(pieceBoard);
+
+                // Detect castling
+                let isCastling = false;
+                let rookFrom: Position | null = null;
+                let rookTo: Position | null = null;
+
+                if (
+                    pieceInfo &&
+                    pieceInfo.type === 'king' &&
+                    Math.abs(actualCol - selectedCol) === 2
+                ) {
+                    isCastling = true;
+                    const y = selectedRow;
+                    if (actualCol === 6) {
+                        // Kingside
+                        rookFrom = { x: 7, y };
+                        rookTo = { x: 5, y };
+                    } else if (actualCol === 2) {
+                        // Queenside
+                        rookFrom = { x: 0, y };
+                        rookTo = { x: 3, y };
+                    }
+                }
+
+                // Detect en passant
+                let isEnPassant = false;
+                let capturedPawn: { row: number; col: number } | null = null;
+                if (
+                    pieceInfo &&
+                    pieceInfo.type === 'pawn' &&
+                    enPassantTarget &&
+                    actualCol === enPassantTarget.x &&
+                    actualRow === enPassantTarget.y
+                ) {
+                    isEnPassant = true;
+                    capturedPawn = {
+                        row: selectedRow,
+                        col: actualCol,
+                    };
+                }
+
+                // Build new board after move
+                let newBoard = board.map(row => [...row]);
+                if (isCastling && rookFrom && rookTo) {
+                    // Move king
+                    newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
+                    newBoard[selectedRow][selectedCol] = null;
+                    // Move rook
+                    newBoard[rookTo.y][rookTo.x] = board[rookFrom.y][rookFrom.x];
+                    newBoard[rookFrom.y][rookFrom.x] = null;
+                } else if (isEnPassant && capturedPawn) {
+                    // Move pawn
+                    newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
+                    newBoard[selectedRow][selectedCol] = null;
+                    // Remove captured pawn
+                    newBoard[capturedPawn.row][capturedPawn.col] = null;
+                } else {
+                    // Normal move
+                    newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
+                    newBoard[selectedRow][selectedCol] = null;
+                }
+
+                // Update hasMoved for king/rook/pawn
+                let newHasMoved = { ...hasMoved };
+                if (pieceInfo) {
+                    const fromKey = `${selectedCol},${selectedRow}`;
+                    newHasMoved[fromKey] = true;
+                    // If castling, also mark rook as moved
+                    if (isCastling && rookFrom) {
+                        const rookKey = `${rookFrom.x},${rookFrom.y}`;
+                        newHasMoved[rookKey] = true;
+                    }
+                }
+
+                // Update en passant target
+                let newEnPassantTarget: Position | null = null;
+                if (
+                    pieceInfo &&
+                    pieceInfo.type === 'pawn' &&
+                    Math.abs(actualRow - selectedRow) === 2
+                ) {
+                    // Set en passant target square
+                    newEnPassantTarget = {
+                        x: selectedCol,
+                        y: (selectedRow + actualRow) / 2,
+                    };
+                }
+
+                // Build move object for history
+                const move: Move = {
+                    from: { x: selectedCol, y: selectedRow },
+                    to: { x: actualCol, y: actualRow },
+                    piece: pieceInfo!,
+                    isCastling,
+                    isEnPassant,
+                    captured: isEnPassant && capturedPawn
+                        ? unicodeToPiece[board[capturedPawn.row][capturedPawn.col]!]
+                        : board[actualRow][actualCol],
+                };
+
                 setBoard(newBoard);
+                setHasMoved(newHasMoved);
+                setEnPassantTarget(newEnPassantTarget);
+                setMoveHistory([...moveHistory, move]);
                 setGreenHighlights({ from: { row: selectedRow, col: selectedCol }, to: { row: actualRow, col: actualCol } });
                 setSelectedCell(null);
                 setYellowHighlight(null);
                 setValidMoves([]);
             } else if (board[actualRow]?.[actualCol]) {
-                // If another piece is selected, select it and show its moves
                 setSelectedCell({ row: actualRow, col: actualCol });
                 setGreenHighlights({ from: { row: actualRow, col: actualCol }, to: { row: actualRow, col: actualCol } });
                 setYellowHighlight(null);
@@ -130,23 +247,23 @@ const ChessBoard: React.FC = () => {
                 if (pieceChar) {
                     const pieceInfo = unicodeToPiece[pieceChar];
                     const pieceBoard = convertToPieceBoard(board);
+                    const gameState = getGameState(pieceBoard);
                     const moves = pieceMoveFunctions[pieceInfo.type](
                         { x: actualCol, y: actualRow },
                         pieceBoard,
-                        pieceInfo.color
+                        pieceInfo.color,
+                        gameState
                     );
                     setValidMoves(moves);
                 } else {
                     setValidMoves([]);
                 }
             } else {
-                // Clicked on an invalid square, clear selection
                 setSelectedCell(null);
                 setYellowHighlight({ row: actualRow, col: actualCol });
                 setValidMoves([]);
             }
         } else if (board[actualRow]?.[actualCol]) {
-            // Select the piece if the square contains one
             setSelectedCell({ row: actualRow, col: actualCol });
             setGreenHighlights({ from: { row: actualRow, col: actualCol }, to: { row: actualRow, col: actualCol } });
             setYellowHighlight(null);
@@ -155,17 +272,18 @@ const ChessBoard: React.FC = () => {
             if (pieceChar) {
                 const pieceInfo = unicodeToPiece[pieceChar];
                 const pieceBoard = convertToPieceBoard(board);
+                const gameState = getGameState(pieceBoard);
                 const moves = pieceMoveFunctions[pieceInfo.type](
                     { x: actualCol, y: actualRow },
                     pieceBoard,
-                    pieceInfo.color
+                    pieceInfo.color,
+                    gameState
                 );
                 setValidMoves(moves);
             } else {
                 setValidMoves([]);
             }
         } else {
-            // Highlight the selected empty cell in yellow
             setYellowHighlight({ row: actualRow, col: actualCol });
             setValidMoves([]);
         }
