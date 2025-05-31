@@ -83,3 +83,12 @@
 .flip-button:hover {
     background-color: #005bb5;
 }
+
+.chess-square.red-blink {
+    animation: red-blink 0.6s 2;
+}
+@keyframes red-blink {
+    0%   { background-color: #ff4d4d; }
+    50%  { background-color: #fff; }
+    100% { background-color: #ff4d4d; }
+}

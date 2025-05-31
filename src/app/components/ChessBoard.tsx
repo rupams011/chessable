@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './ChessBoard.css'; // Import the CSS file for styling
 import {
     Position,
@@ -84,6 +84,8 @@ const ChessBoard: React.FC = () => {
     const [greenHighlights, setGreenHighlights] = useState<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null);
     const [yellowHighlight, setYellowHighlight] = useState<{ row: number; col: number } | null>(null);
     const [validMoves, setValidMoves] = useState<Position[]>([]); // Store valid moves for selected piece
+    const [redBlinkCell, setRedBlinkCell] = useState<{ row: number; col: number } | null>(null);
+    const redBlinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // --- Special move state for castling and en passant ---
     // Track which pieces have moved (for castling)
@@ -117,6 +119,17 @@ const ChessBoard: React.FC = () => {
             hasMoved,
             enPassantTarget,
         };
+    }
+
+    // Helper: Check if a move would leave the king in check (placeholder, replace with real logic if available)
+    function wouldLeaveKingInCheck(
+        from: { row: number; col: number },
+        to: { row: number; col: number },
+        pieceInfo: { type: PieceType; color: Color }
+    ): boolean {
+        // Placeholder: always returns false (legal), replace with real check detection if available
+        // To implement: simulate the move, check if king of pieceInfo.color is under attack
+        return false;
     }
 
     // --- Enhanced move logic for castling and en passant ---
@@ -161,13 +174,28 @@ const ChessBoard: React.FC = () => {
         }
         const selectedPieceInfo = unicodeToPiece[selectedPieceChar];
         if (selectedPieceInfo.color !== currentTurn) {
-            // Not your turn, can't move opponent's piece
             setSelectedCell(null);
             setValidMoves([]);
             return;
         }
 
         if (isValidMove(actualRow, actualCol)) {
+            // --- Check if move would leave king in check (illegal move) ---
+            if (wouldLeaveKingInCheck(
+                { row: selectedRow, col: selectedCol },
+                { row: actualRow, col: actualCol },
+                selectedPieceInfo
+            )) {
+                // Trigger red blink on the selected cell
+                setRedBlinkCell({ row: selectedRow, col: selectedCol });
+                if (redBlinkTimeoutRef.current) clearTimeout(redBlinkTimeoutRef.current);
+                redBlinkTimeoutRef.current = setTimeout(() => {
+                    setRedBlinkCell(null);
+                }, 1200); // 0.6s * 2 blinks
+                // Do not change turn or move piece
+                return;
+            }
+
             // Move logic
             const pieceChar = board[selectedRow][selectedCol];
             const pieceInfo = pieceChar ? unicodeToPiece[pieceChar] : null;
@@ -304,6 +332,14 @@ const ChessBoard: React.FC = () => {
             );
             setValidMoves(moves);
         } else {
+            // Attempted to move to an invalid square (illegal move)
+            if (selectedCell) {
+                setRedBlinkCell({ row: selectedCell.row, col: selectedCell.col });
+                if (redBlinkTimeoutRef.current) clearTimeout(redBlinkTimeoutRef.current);
+                redBlinkTimeoutRef.current = setTimeout(() => {
+                    setRedBlinkCell(null);
+                }, 1200);
+            }
             setSelectedCell(null);
             setYellowHighlight({ row: actualRow, col: actualCol });
             setValidMoves([]);
@@ -342,13 +378,17 @@ const ChessBoard: React.FC = () => {
                         const isValid =
                             selectedCell &&
                             isValidMove(actualRow, actualCol);
+                        const isRedBlink =
+                            redBlinkCell &&
+                            redBlinkCell.row === actualRow &&
+                            redBlinkCell.col === actualCol;
 
                         return (
                             <div
                                 key={`${rowIndex}-${colIndex}`}
                                 className={`chess-square ${((rowIndex + colIndex) % 2 === 0) ? 'light' : 'dark'} ${
                                     isGreenFrom || isGreenTo ? 'green-highlight' : ''
-                                } ${isYellow ? 'yellow-highlight' : ''} ${isValid ? 'highlight' : ''}`}
+                                } ${isYellow ? 'yellow-highlight' : ''} ${isValid ? 'highlight' : ''} ${isRedBlink ? 'red-blink' : ''}`}
                                 onClick={() => handleSquareClick(rowIndex, colIndex)}
                             >
                                 {square && <span className="chess-piece">{square}</span>}
