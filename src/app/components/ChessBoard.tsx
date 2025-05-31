@@ -299,8 +299,12 @@ const ChessBoard: React.FC = () => {
                 isCastling,
                 isEnPassant,
                 captured: isEnPassant && capturedPawn
-                    ? unicodeToPiece[board[capturedPawn.row][capturedPawn.col]!]
-                    : board[actualRow][actualCol],
+                    ? (board[capturedPawn.row][capturedPawn.col]
+                        ? unicodeToPiece[board[capturedPawn.row][capturedPawn.col]!]
+                        : null)
+                    : (board[actualRow][actualCol]
+                        ? unicodeToPiece[board[actualRow][actualCol]!]
+                        : null),
             };
 
             setBoard(newBoard);
