@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './ChessBoard.css';
 import {
     Position,
@@ -97,6 +97,20 @@ const ChessBoard: React.FC = () => {
     // Add currentTurn state
     const [currentTurn, setCurrentTurn] = useState<Color>('white');
 
+    // Add timer and move list state
+    const INITIAL_TIME = 10 * 60; // 10 minutes in seconds
+
+    const [playerTime, setPlayerTime] = useState(INITIAL_TIME); // White
+    const [opponentTime, setOpponentTime] = useState(INITIAL_TIME); // Black
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Move list as array of {white: string, black: string}
+    const [moveList, setMoveList] = useState<{ white?: string; black?: string }[]>([]);
+
+    // Captured pieces state (unicode chars)
+    const [capturedByOpponent, setCapturedByOpponent] = useState<string[]>([]);
+    const [capturedByPlayer, setCapturedByPlayer] = useState<string[]>([]);
+
     // Generate row and column labels dynamically based on the board orientation
     const rows = isFlipped ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
     const columns = isFlipped ? ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'] : ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -130,6 +144,104 @@ const ChessBoard: React.FC = () => {
         // Placeholder: always returns false (legal), replace with real check detection if available
         // To implement: simulate the move, check if king of pieceInfo.color is under attack
         return false;
+    }
+
+    // Helper: Format seconds as mm:ss
+    function formatClock(seconds: number) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    // Helper: Convert move to FIDE notation (very basic, can be improved)
+    function getMoveNotation(move: Move, moveNumber: number, isWhite: boolean) {
+        // Basic: piece letter (except pawn), destination square, 'x' for capture, 'O-O'/'O-O-O' for castling
+        if (move.isCastling) {
+            if (move.to.x === 6) return isWhite ? "O-O" : "O-O";
+            if (move.to.x === 2) return isWhite ? "O-O-O" : "O-O-O";
+        }
+        const files = "abcdefgh";
+        const pieceLetter = move.piece.type === "pawn" ? "" : move.piece.type[0].toUpperCase();
+        const capture = move.captured ? "x" : "";
+        const toSquare = files[move.to.x] + (8 - move.to.y);
+        if (move.piece.type === "pawn" && move.captured) {
+            // Pawn capture: exd5
+            return files[move.from.x] + "x" + toSquare;
+        }
+        return pieceLetter + capture + toSquare;
+    }
+
+    // --- Timer logic ---
+    useEffect(() => {
+        // Clear any previous timer
+        if (timerRef.current) clearInterval(timerRef.current);
+
+        // Only run timer for the current turn
+        timerRef.current = setInterval(() => {
+            if (currentTurn === "white") {
+                setPlayerTime((t) => (t > 0 ? t - 1 : 0));
+            } else {
+                setOpponentTime((t) => (t > 0 ? t - 1 : 0));
+            }
+        }, 1000);
+
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [currentTurn]);
+
+    // --- Move list update logic ---
+    // Call this after every valid move
+    function updateMoveList(move: Move) {
+        const isWhiteMove = move.piece.color === "white";
+        setMoveList((prev) => {
+            const moveNotation = getMoveNotation(
+                move,
+                Math.floor(prev.length / 2) + 1,
+                isWhiteMove
+            );
+            if (isWhiteMove) {
+                // Start new row
+                return [...prev, { white: moveNotation }];
+            } else {
+                // Add to last row
+                if (prev.length === 0) return [{ black: moveNotation }];
+                const last = prev[prev.length - 1];
+                return [...prev.slice(0, -1), { ...last, black: moveNotation }];
+            }
+        });
+    }
+
+    // --- Captured pieces update logic ---
+    // Call this after every valid move
+    function updateCapturedPieces(move: Move) {
+        if (move.captured && move.captured.type) {
+            // Unicode for captured piece
+            const pieceToUnicode: Record<Color, Record<PieceType, string>> = {
+                white: {
+                    pawn: '♙',
+                    rook: '♖',
+                    knight: '♘',
+                    bishop: '♗',
+                    queen: '♕',
+                    king: '♔',
+                },
+                black: {
+                    pawn: '♟',
+                    rook: '♜',
+                    knight: '♞',
+                    bishop: '♝',
+                    queen: '♛',
+                    king: '♚',
+                },
+            };
+            const capturedChar = pieceToUnicode[move.captured.color][move.captured.type];
+            if (move.piece.color === "white") {
+                setCapturedByPlayer((prev) => [...prev, capturedChar]);
+            } else {
+                setCapturedByOpponent((prev) => [...prev, capturedChar]);
+            }
+        }
     }
 
     // --- Enhanced move logic for castling and en passant ---
@@ -315,7 +427,12 @@ const ChessBoard: React.FC = () => {
             setSelectedCell(null);
             setYellowHighlight(null);
             setValidMoves([]);
-            // Switch turn after a valid move
+
+            // --- Timer and move list/capture updates ---
+            updateMoveList(move);
+            updateCapturedPieces(move);
+
+            // Switch turn after a valid move (timer handled by useEffect)
             setCurrentTurn(currentTurn === 'white' ? 'black' : 'white');
         } else if (board[actualRow]?.[actualCol]) {
             // Only allow selecting your own piece
@@ -361,25 +478,10 @@ const ChessBoard: React.FC = () => {
         }
     };
 
-    // Placeholder data for clocks and captured pieces
-    const opponentClock = "09:45";
-    const playerClock = "10:00";
-    const capturedByOpponent: string[] = []; // Unicode chars of pieces
-    const capturedByPlayer: string[] = [];
-
-    // Example: Generate move list in FIDE notation (placeholder)
-    const moveList: string[] = [
-        "1. e4 e5",
-        "2. Nf3 Nc6",
-        "3. Bb5 a6",
-        // ...populate from your moveHistory if desired...
-    ];
-
     return (
         <div className="chess-layout">
             {/* Left: Chessboard */}
             <div className="chessboard-panel">
-                {/* Existing chessboard rendering */}
                 <div className="chess-container">
                     <div className="chess-board">
                         {(isFlipped ? [...board].reverse() : board).map((row, rowIndex) =>
@@ -439,7 +541,7 @@ const ChessBoard: React.FC = () => {
             <div className="info-panel">
                 {/* Left partition (2/3) */}
                 <div className="info-left">
-                    <div className="clock opponent-clock">Opponent: {opponentClock}</div>
+                    <div className="clock opponent-clock">Opponent: {formatClock(opponentTime)}</div>
                     <div className="captured-pieces captured-by-opponent">
                         {capturedByOpponent.length === 0 ? (
                             <span className="captured-placeholder">No captures</span>
@@ -459,14 +561,16 @@ const ChessBoard: React.FC = () => {
                             ))
                         )}
                     </div>
-                    <div className="clock player-clock">You: {playerClock}</div>
+                    <div className="clock player-clock">You: {formatClock(playerTime)}</div>
                 </div>
                 {/* Right partition (1/3) */}
                 <div className="info-right">
                     <div className="move-list-title">Move List</div>
                     <div className="move-list">
                         {moveList.map((move, idx) => (
-                            <div className="move-list-row" key={idx}>{move}</div>
+                            <div className="move-list-row" key={idx}>
+                                {`${idx + 1}. ${move.white || ""}${move.black ? " " + move.black : ""}`}
+                            </div>
                         ))}
                     </div>
                 </div>
