@@ -102,8 +102,12 @@
     display: flex;
     flex-direction: row;
     width: 100vw;
+    max-width: 1280px;
     min-height: 100vh;
     box-sizing: border-box;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .chessboard-panel {
