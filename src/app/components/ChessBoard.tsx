@@ -478,6 +478,66 @@ const ChessBoard: React.FC = () => {
         }
     };
 
+    // Helper to flip captured pieces and clocks order
+    function renderInfoLeft() {
+        // If not flipped: opponent clock, opponent captures, separator, player captures, player clock
+        // If flipped: player clock, player captures, separator, opponent captures, opponent clock
+        if (!isFlipped) {
+            return (
+                <>
+                    <div className="clock opponent-clock">Opponent: {formatClock(opponentTime)}</div>
+                    <div className="captured-pieces captured-by-opponent">
+                        {capturedByOpponent.length === 0 ? (
+                            <span className="captured-placeholder">No captures</span>
+                        ) : (
+                            capturedByOpponent.map((piece, idx) => (
+                                <span className="captured-piece" key={idx}>{piece}</span>
+                            ))
+                        )}
+                    </div>
+                    <div className="info-separator" />
+                    <div className="captured-pieces captured-by-player">
+                        {capturedByPlayer.length === 0 ? (
+                            <span className="captured-placeholder">No captures</span>
+                        ) : (
+                            capturedByPlayer.map((piece, idx) => (
+                                <span className="captured-piece" key={idx}>{piece}</span>
+                            ))
+                        )}
+                    </div>
+                    <div className="clock player-clock">You: {formatClock(playerTime)}</div>
+                </>
+            );
+        } else {
+            // Flipped order
+            return (
+                <>
+                    <div className="clock player-clock">You: {formatClock(playerTime)}</div>
+                    <div className="captured-pieces captured-by-player">
+                        {capturedByPlayer.length === 0 ? (
+                            <span className="captured-placeholder">No captures</span>
+                        ) : (
+                            capturedByPlayer.map((piece, idx) => (
+                                <span className="captured-piece" key={idx}>{piece}</span>
+                            ))
+                        )}
+                    </div>
+                    <div className="info-separator" />
+                    <div className="captured-pieces captured-by-opponent">
+                        {capturedByOpponent.length === 0 ? (
+                            <span className="captured-placeholder">No captures</span>
+                        ) : (
+                            capturedByOpponent.map((piece, idx) => (
+                                <span className="captured-piece" key={idx}>{piece}</span>
+                            ))
+                        )}
+                    </div>
+                    <div className="clock opponent-clock">Opponent: {formatClock(opponentTime)}</div>
+                </>
+            );
+        }
+    }
+
     return (
         <div className="chess-layout">
             {/* Left: Chessboard */}
@@ -541,27 +601,7 @@ const ChessBoard: React.FC = () => {
             <div className="info-panel">
                 {/* Left partition (2/3) */}
                 <div className="info-left">
-                    <div className="clock opponent-clock">Opponent: {formatClock(opponentTime)}</div>
-                    <div className="captured-pieces captured-by-opponent">
-                        {capturedByOpponent.length === 0 ? (
-                            <span className="captured-placeholder">No captures</span>
-                        ) : (
-                            capturedByOpponent.map((piece, idx) => (
-                                <span className="captured-piece" key={idx}>{piece}</span>
-                            ))
-                        )}
-                    </div>
-                    <div className="info-separator" />
-                    <div className="captured-pieces captured-by-player">
-                        {capturedByPlayer.length === 0 ? (
-                            <span className="captured-placeholder">No captures</span>
-                        ) : (
-                            capturedByPlayer.map((piece, idx) => (
-                                <span className="captured-piece" key={idx}>{piece}</span>
-                            ))
-                        )}
-                    </div>
-                    <div className="clock player-clock">You: {formatClock(playerTime)}</div>
+                    {renderInfoLeft()}
                 </div>
                 {/* Right partition (1/3) */}
                 <div className="info-right">
