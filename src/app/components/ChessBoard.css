@@ -7,12 +7,14 @@
 
 .chess-board {
     display: grid;
-    grid-template-columns: repeat(8, 1fr); /* 8 equal columns */
-    grid-template-rows: repeat(8, 1fr); /* 8 equal rows */
-    width: 400px;
-    height: 400px;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 460px;    /* 400px * 1.15 */
+    height: 460px;   /* 400px * 1.15 */
+    aspect-ratio: 1 / 1; /* Ensures perfect square regardless of parent/container */
     border: 2px solid black;
     position: relative;
+    box-sizing: border-box;
 }
 
 .chess-square {
@@ -22,7 +24,9 @@
     font-size: 24px;
     width: 100%;
     height: 100%;
+    aspect-ratio: 1 / 1; /* Ensures each square is perfectly square */
     position: relative;
+    box-sizing: border-box;
 }
 
 .chess-square.light {
@@ -50,7 +54,7 @@
 }
 
 .chess-piece {
-    font-size: 32px; /* Adjust size of the chess pieces */
+    font-size: 48px; /* 32px * 1.75 */
 }
 
 .row-label {
