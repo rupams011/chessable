@@ -40,31 +40,31 @@ function convertToPieceBoard(board: (string | null)[][]): Board {
 }
 
 // Helper: Convert board of Piece | null to board of strings (used for FEN, debugging, or export)
-function convertToStringBoard(board: Board): (string | null)[][] {
-    const pieceToUnicode: Record<Color, Record<PieceType, string>> = {
-        white: {
-            pawn: '♙',
-            rook: '♖',
-            knight: '♘',
-            bishop: '♗',
-            queen: '♕',
-            king: '♔',
-        },
-        black: {
-            pawn: '♟',
-            rook: '♜',
-            knight: '♞',
-            bishop: '♝',
-            queen: '♛',
-            king: '♚',
-        },
-    };
-    return board.map(row =>
-        row.map(cell =>
-            cell ? pieceToUnicode[cell.color][cell.type] : null
-        )
-    );
-}
+// function convertToStringBoard(board: Board): (string | null)[][] {
+//     const pieceToUnicode: Record<Color, Record<PieceType, string>> = {
+//         white: {
+//             pawn: '♙',
+//             rook: '♖',
+//             knight: '♘',
+//             bishop: '♗',
+//             queen: '♕',
+//             king: '♔',
+//         },
+//         black: {
+//             pawn: '♟',
+//             rook: '♜',
+//             knight: '♞',
+//             bishop: '♝',
+//             queen: '♛',
+//             king: '♚',
+//         },
+//     };
+//     return board.map(row =>
+//         row.map(cell =>
+//             cell ? pieceToUnicode[cell.color][cell.type] : null
+//         )
+//     );
+// }
 
 const ChessBoard: React.FC = () => {
     // Initial board setup with pieces
@@ -368,7 +368,7 @@ const ChessBoard: React.FC = () => {
             // Move logic
             const pieceChar = board[selectedRow][selectedCol];
             const pieceInfo = pieceChar ? unicodeToPiece[pieceChar] : null;
-            const pieceBoard = convertToPieceBoard(board);
+            // const pieceBoard = convertToPieceBoard(board);
 
             // Remove unused assignment: gameState
             // If you want to use gameState, use it for move validation or pass to move functions.
