@@ -181,7 +181,7 @@ const ChessBoard: React.FC = () => {
         }
 
         // Find king's position after move
-        let kingChar = pieceInfo.color === 'white' ? '♔' : '♚';
+        const kingChar = pieceInfo.color === 'white' ? '♔' : '♚'; // Use const instead of let
         let kingPos: { x: number; y: number } | null = null;
         for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 8; x++) {
@@ -196,10 +196,8 @@ const ChessBoard: React.FC = () => {
         }
         if (!kingPos) return true;
 
-        // Convert to Piece board for isSquareUnderAttack
         const pieceBoard = convertToPieceBoard(simulatedBoard);
 
-        // Check if king is under attack after the move
         return isSquareUnderAttack(kingPos, pieceBoard, pieceInfo.color === 'white' ? 'black' : 'white');
     }
 
@@ -372,8 +370,10 @@ const ChessBoard: React.FC = () => {
             const pieceInfo = pieceChar ? unicodeToPiece[pieceChar] : null;
             const pieceBoard = convertToPieceBoard(board);
 
-            // Prepare GameState for rules (now used for move validation and future extensions)
-            const gameState = getGameState(pieceBoard);
+            // Remove unused assignment: gameState
+            // If you want to use gameState, use it for move validation or pass to move functions.
+            // Otherwise, just remove this line:
+            // const gameState = getGameState(pieceBoard);
 
             // Detect castling
             let isCastling = false;
@@ -416,7 +416,7 @@ const ChessBoard: React.FC = () => {
             }
 
             // Build new board after move
-            let newBoard = board.map(row => [...row]);
+            const newBoard = board.map(row => [...row]);
             if (isCastling && rookFrom && rookTo) {
                 // Move king
                 newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
@@ -437,7 +437,7 @@ const ChessBoard: React.FC = () => {
             }
 
             // Update hasMoved for king/rook/pawn
-            let newHasMoved = { ...hasMoved };
+            const newHasMoved = { ...hasMoved };
             if (pieceInfo) {
                 const fromKey = `${selectedCol},${selectedRow}`;
                 newHasMoved[fromKey] = true;

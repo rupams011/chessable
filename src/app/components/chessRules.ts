@@ -222,7 +222,42 @@ export function isSquareUnderAttack(
   board: Board,
   attackerColor: Color
 ): boolean {
-  // Implement check detection logic here in the future
+  // Check if any piece of attackerColor can attack pos
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const piece = board[y][x];
+      if (piece && piece.color === attackerColor) {
+        let moves: Position[] = [];
+        switch (piece.type) {
+          case 'pawn':
+            // Pawns attack diagonally
+            const dir = attackerColor === 'white' ? -1 : 1;
+            for (const dx of [-1, 1]) {
+              if (x + dx === pos.x && y + dir === pos.y) {
+                return true;
+              }
+            }
+            break;
+          case 'rook':
+            moves = getRookMoves({ x, y }, board, attackerColor);
+            break;
+          case 'knight':
+            moves = getKnightMoves({ x, y }, board, attackerColor);
+            break;
+          case 'bishop':
+            moves = getBishopMoves({ x, y }, board, attackerColor);
+            break;
+          case 'queen':
+            moves = getQueenMoves({ x, y }, board, attackerColor);
+            break;
+          case 'king':
+            moves = getKingMoves({ x, y }, board, attackerColor);
+            break;
+        }
+        if (moves.some(m => m.x === pos.x && m.y === pos.y)) return true;
+      }
+    }
+  }
   return false;
 }
 
