@@ -17,3 +17,5 @@ build:
       - public
   only:
     - main
+  on:
+    push
