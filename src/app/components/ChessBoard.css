@@ -96,3 +96,145 @@
     50%  { background-color: #fff; }
     100% { background-color: #ff4d4d; }
 }
+
+/* Layout for the new UI */
+.chess-layout {
+    display: flex;
+    flex-direction: row;
+    width: 100vw;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.chessboard-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 32px 16px 32px 32px;
+}
+
+.info-panel {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 32px 32px 32px 0;
+    gap: 24px;
+    align-items: flex-start;
+    /* Panel takes full viewport height */
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+.info-left {
+    display: flex;
+    flex-direction: column;
+    flex: 2 2 0;
+    min-width: 0;
+    justify-content: space-between;
+    align-items: stretch;
+    padding-right: 24px;
+    gap: 16px;
+    /* Height matches chessboard (do not change .chess-board!) */
+    height: 460px;
+    box-sizing: border-box;
+}
+
+.info-right {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-width: 0;
+    border-left: 1px solid #ccc;
+    padding-left: 16px;
+    max-width: 260px;
+    height: 100vh; /* Full viewport height */
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent outer scroll, only move-list scrolls */
+}
+
+.clock {
+    font-size: 1.3rem;
+    font-weight: bold;
+    text-align: center;
+    margin: 8px 0;
+}
+
+.opponent-clock {
+    color: #b22222;
+}
+
+.player-clock {
+    color: #228B22;
+}
+
+.captured-pieces {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 32px;
+    gap: 4px;
+    font-size: 22px;
+}
+
+.captured-piece {
+    font-size: 22px;
+    margin-right: 2px;
+}
+
+.captured-placeholder {
+    color: #aaa;
+    font-size: 0.95em;
+}
+
+.info-separator {
+    height: 16px;
+    border-bottom: 1px solid #ddd;
+    margin: 8px 0;
+}
+
+.move-list-title {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.move-list {
+    flex: 1 1 0;
+    overflow-y: auto;
+    max-height: 100vh;
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 8px 8px 8px 12px;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 1.05em;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.move-list-row {
+    padding: 2px 0;
+    border-bottom: 1px solid #f0f0f0;
+    white-space: pre;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 900px) {
+    .info-panel {
+        flex-direction: column;
+        gap: 12px;
+        height: auto;
+        padding: 12px;
+    }
+    .info-left, .info-right {
+        padding: 0;
+        max-width: none;
+        height: auto;
+    }
+    .move-list {
+        max-height: 200px;
+    }
+}

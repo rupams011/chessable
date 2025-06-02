@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import './ChessBoard.css'; // Import the CSS file for styling
+import './ChessBoard.css';
 import {
     Position,
     Piece,
@@ -11,7 +11,7 @@ import {
     pieceMoveFunctions,
     GameState,
     Move,
-} from './chessRules'; // Import chess rules (with special moves support)
+} from './chessRules';
 
 // Helper: Map Unicode to PieceType and Color
 const unicodeToPiece: Record<string, { type: PieceType; color: Color }> = {
@@ -361,61 +361,116 @@ const ChessBoard: React.FC = () => {
         }
     };
 
-    return (
-        <div className="chess-container">
-            <div className="chess-board">
-                {(isFlipped ? [...board].reverse() : board).map((row, rowIndex) =>
-                    (isFlipped ? [...row].reverse() : row).map((square, colIndex) => {
-                        const { actualRow, actualCol } = getActualIndices(rowIndex, colIndex);
-                        const isGreenFrom =
-                            greenHighlights &&
-                            greenHighlights.from.row === actualRow &&
-                            greenHighlights.from.col === actualCol;
-                        const isGreenTo =
-                            greenHighlights &&
-                            greenHighlights.to.row === actualRow &&
-                            greenHighlights.to.col === actualCol;
-                        const isYellow =
-                            yellowHighlight &&
-                            yellowHighlight.row === actualRow &&
-                            yellowHighlight.col === actualCol;
-                        const isValid =
-                            selectedCell &&
-                            isValidMove(actualRow, actualCol);
-                        const isRedBlink =
-                            redBlinkCell &&
-                            redBlinkCell.row === actualRow &&
-                            redBlinkCell.col === actualCol;
+    // Placeholder data for clocks and captured pieces
+    const opponentClock = "09:45";
+    const playerClock = "10:00";
+    const capturedByOpponent: string[] = []; // Unicode chars of pieces
+    const capturedByPlayer: string[] = [];
 
-                        return (
-                            <div
-                                key={`${rowIndex}-${colIndex}`}
-                                className={`chess-square ${((rowIndex + colIndex) % 2 === 0) ? 'light' : 'dark'} ${
-                                    isGreenFrom || isGreenTo ? 'green-highlight' : ''
-                                } ${isYellow ? 'yellow-highlight' : ''} ${isValid ? 'highlight' : ''} ${isRedBlink ? 'red-blink' : ''}`}
-                                onClick={() => handleSquareClick(rowIndex, colIndex)}
-                            >
-                                {square && <span className="chess-piece">{square}</span>}
-                                {/* Add row and column labels */}
-                                {colIndex === 0 && (
-                                    <span className="row-label">
-                                        {rows[rowIndex]}
-                                    </span>
-                                )}
-                                {rowIndex === 7 && (
-                                    <span className="column-label">
-                                        {columns[colIndex]}
-                                    </span>
-                                )}
-                            </div>
-                        );
-                    })
-                )}
+    // Example: Generate move list in FIDE notation (placeholder)
+    const moveList: string[] = [
+        "1. e4 e5",
+        "2. Nf3 Nc6",
+        "3. Bb5 a6",
+        // ...populate from your moveHistory if desired...
+    ];
+
+    return (
+        <div className="chess-layout">
+            {/* Left: Chessboard */}
+            <div className="chessboard-panel">
+                {/* Existing chessboard rendering */}
+                <div className="chess-container">
+                    <div className="chess-board">
+                        {(isFlipped ? [...board].reverse() : board).map((row, rowIndex) =>
+                            (isFlipped ? [...row].reverse() : row).map((square, colIndex) => {
+                                const { actualRow, actualCol } = getActualIndices(rowIndex, colIndex);
+                                const isGreenFrom =
+                                    greenHighlights &&
+                                    greenHighlights.from.row === actualRow &&
+                                    greenHighlights.from.col === actualCol;
+                                const isGreenTo =
+                                    greenHighlights &&
+                                    greenHighlights.to.row === actualRow &&
+                                    greenHighlights.to.col === actualCol;
+                                const isYellow =
+                                    yellowHighlight &&
+                                    yellowHighlight.row === actualRow &&
+                                    yellowHighlight.col === actualCol;
+                                const isValid =
+                                    selectedCell &&
+                                    isValidMove(actualRow, actualCol);
+                                const isRedBlink =
+                                    redBlinkCell &&
+                                    redBlinkCell.row === actualRow &&
+                                    redBlinkCell.col === actualCol;
+
+                                return (
+                                    <div
+                                        key={`${rowIndex}-${colIndex}`}
+                                        className={`chess-square ${((rowIndex + colIndex) % 2 === 0) ? 'light' : 'dark'} ${
+                                            isGreenFrom || isGreenTo ? 'green-highlight' : ''
+                                        } ${isYellow ? 'yellow-highlight' : ''} ${isValid ? 'highlight' : ''} ${isRedBlink ? 'red-blink' : ''}`}
+                                        onClick={() => handleSquareClick(rowIndex, colIndex)}
+                                    >
+                                        {square && <span className="chess-piece">{square}</span>}
+                                        {colIndex === 0 && (
+                                            <span className="row-label">
+                                                {rows[rowIndex]}
+                                            </span>
+                                        )}
+                                        {rowIndex === 7 && (
+                                            <span className="column-label">
+                                                {columns[colIndex]}
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                    <button className="flip-button" onClick={flipBoard}>
+                        Flip Board
+                    </button>
+                </div>
             </div>
-            {/* Flip Board Button */}
-            <button className="flip-button" onClick={flipBoard}>
-                Flip Board
-            </button>
+
+            {/* Right: Info Panel */}
+            <div className="info-panel">
+                {/* Left partition (2/3) */}
+                <div className="info-left">
+                    <div className="clock opponent-clock">Opponent: {opponentClock}</div>
+                    <div className="captured-pieces captured-by-opponent">
+                        {capturedByOpponent.length === 0 ? (
+                            <span className="captured-placeholder">No captures</span>
+                        ) : (
+                            capturedByOpponent.map((piece, idx) => (
+                                <span className="captured-piece" key={idx}>{piece}</span>
+                            ))
+                        )}
+                    </div>
+                    <div className="info-separator" />
+                    <div className="captured-pieces captured-by-player">
+                        {capturedByPlayer.length === 0 ? (
+                            <span className="captured-placeholder">No captures</span>
+                        ) : (
+                            capturedByPlayer.map((piece, idx) => (
+                                <span className="captured-piece" key={idx}>{piece}</span>
+                            ))
+                        )}
+                    </div>
+                    <div className="clock player-clock">You: {playerClock}</div>
+                </div>
+                {/* Right partition (1/3) */}
+                <div className="info-right">
+                    <div className="move-list-title">Move List</div>
+                    <div className="move-list">
+                        {moveList.map((move, idx) => (
+                            <div className="move-list-row" key={idx}>{move}</div>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
