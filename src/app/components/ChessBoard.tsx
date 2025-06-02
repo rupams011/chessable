@@ -11,6 +11,7 @@ import {
     pieceMoveFunctions,
     GameState,
     Move,
+    isSquareUnderAttack,
 } from './chessRules';
 
 // Helper: Map Unicode to PieceType and Color
@@ -38,7 +39,7 @@ function convertToPieceBoard(board: (string | null)[][]): Board {
     );
 }
 
-// Helper: Convert board of Piece | null to board of strings
+// Helper: Convert board of Piece | null to board of strings (used for FEN, debugging, or export)
 function convertToStringBoard(board: Board): (string | null)[][] {
     const pieceToUnicode: Record<Color, Record<PieceType, string>> = {
         white: {
@@ -135,15 +136,71 @@ const ChessBoard: React.FC = () => {
         };
     }
 
-    // Helper: Check if a move would leave the king in check (placeholder, replace with real logic if available)
+    // Helper: Simulate a move and check if king is in check after the move
     function wouldLeaveKingInCheck(
         from: { row: number; col: number },
         to: { row: number; col: number },
-        pieceInfo: { type: PieceType; color: Color }
+        pieceInfo: { type: PieceType; color: Color },
+        board: (string | null)[][],
+        enPassantTarget: Position | null
     ): boolean {
-        // Placeholder: always returns false (legal), replace with real check detection if available
-        // To implement: simulate the move, check if king of pieceInfo.color is under attack
-        return false;
+        // Simulate the move on a copy of the board
+        const simulatedBoard = board.map(row => [...row]);
+        const movingPiece = simulatedBoard[from.row][from.col];
+
+        // Handle castling simulation
+        if (pieceInfo.type === 'king' && Math.abs(to.col - from.col) === 2) {
+            // Kingside
+            if (to.col === 6) {
+                simulatedBoard[from.row][4] = null;
+                simulatedBoard[from.row][6] = movingPiece;
+                simulatedBoard[from.row][7] = null;
+                simulatedBoard[from.row][5] = pieceInfo.color === 'white' ? '♖' : '♜';
+            }
+            // Queenside
+            else if (to.col === 2) {
+                simulatedBoard[from.row][4] = null;
+                simulatedBoard[from.row][2] = movingPiece;
+                simulatedBoard[from.row][0] = null;
+                simulatedBoard[from.row][3] = pieceInfo.color === 'white' ? '♖' : '♜';
+            }
+        } else if (
+            pieceInfo.type === 'pawn' &&
+            enPassantTarget &&
+            to.col === enPassantTarget.x &&
+            to.row === enPassantTarget.y
+        ) {
+            // En passant simulation
+            simulatedBoard[to.row][to.col] = movingPiece;
+            simulatedBoard[from.row][from.col] = null;
+            simulatedBoard[from.row][to.col] = null; // Remove captured pawn
+        } else {
+            // Normal move
+            simulatedBoard[to.row][to.col] = movingPiece;
+            simulatedBoard[from.row][from.col] = null;
+        }
+
+        // Find king's position after move
+        let kingChar = pieceInfo.color === 'white' ? '♔' : '♚';
+        let kingPos: { x: number; y: number } | null = null;
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                if (simulatedBoard[y][x] === kingChar) {
+                    kingPos = { x, y };
+                }
+            }
+        }
+        // If king was moved, update kingPos
+        if (pieceInfo.type === 'king') {
+            kingPos = { x: to.col, y: to.row };
+        }
+        if (!kingPos) return true;
+
+        // Convert to Piece board for isSquareUnderAttack
+        const pieceBoard = convertToPieceBoard(simulatedBoard);
+
+        // Check if king is under attack after the move
+        return isSquareUnderAttack(kingPos, pieceBoard, pieceInfo.color === 'white' ? 'black' : 'white');
     }
 
     // Helper: Format seconds as mm:ss
@@ -296,7 +353,9 @@ const ChessBoard: React.FC = () => {
             if (wouldLeaveKingInCheck(
                 { row: selectedRow, col: selectedCol },
                 { row: actualRow, col: actualCol },
-                selectedPieceInfo
+                selectedPieceInfo,
+                board,
+                enPassantTarget
             )) {
                 // Trigger red blink on the selected cell
                 setRedBlinkCell({ row: selectedRow, col: selectedCol });
@@ -313,7 +372,7 @@ const ChessBoard: React.FC = () => {
             const pieceInfo = pieceChar ? unicodeToPiece[pieceChar] : null;
             const pieceBoard = convertToPieceBoard(board);
 
-            // Prepare GameState for rules
+            // Prepare GameState for rules (now used for move validation and future extensions)
             const gameState = getGameState(pieceBoard);
 
             // Detect castling
