@@ -77,7 +77,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
   isFlipped,
   gameStarted,
   onMove,
-  gameMode,
+//   gameMode,
 }) => {
     // Initial board setup with pieces
     const initialBoard = [
