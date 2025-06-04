@@ -66,7 +66,19 @@ function convertToPieceBoard(board: (string | null)[][]): Board {
 //     );
 // }
 
-const ChessBoard: React.FC = () => {
+interface ChessBoardProps {
+  isFlipped: boolean;
+  gameStarted: boolean;
+  onMove: () => void;
+  gameMode: 'friend' | 'pass';
+}
+
+const ChessBoard: React.FC<ChessBoardProps> = ({
+  isFlipped,
+  gameStarted,
+  onMove,
+  gameMode,
+}) => {
     // Initial board setup with pieces
     const initialBoard = [
         ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
@@ -80,7 +92,7 @@ const ChessBoard: React.FC = () => {
     ];
 
     const [board, setBoard] = useState<(string | null)[][]>(initialBoard);
-    const [isFlipped, setIsFlipped] = useState(false);
+    // const [isFlipped, setIsFlipped] = useState(false);
     const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
     const [greenHighlights, setGreenHighlights] = useState<{ from: { row: number; col: number }; to: { row: number; col: number } } | null>(null);
     const [yellowHighlight, setYellowHighlight] = useState<{ row: number; col: number } | null>(null);
@@ -243,7 +255,7 @@ const ChessBoard: React.FC = () => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [currentTurn]);
+    }, [currentTurn, gameStarted]);
 
     // --- Move list update logic ---
     // Call this after every valid move
@@ -493,6 +505,8 @@ const ChessBoard: React.FC = () => {
 
             // Switch turn after a valid move (timer handled by useEffect)
             setCurrentTurn(currentTurn === 'white' ? 'black' : 'white');
+            // After a valid move:
+            if (onMove) onMove();
         } else if (board[actualRow]?.[actualCol]) {
             // Only allow selecting your own piece
             const pieceChar = board[actualRow][actualCol];
@@ -527,7 +541,7 @@ const ChessBoard: React.FC = () => {
     };
 
     const flipBoard = () => {
-        setIsFlipped(!isFlipped);
+        // setIsFlipped(!isFlipped); // Remove this, as isFlipped is a prop
         setYellowHighlight(null);
         if (selectedCell) {
             setSelectedCell({

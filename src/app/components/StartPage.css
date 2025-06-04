@@ -1,0 +1,50 @@
+.start-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  animation: fadeIn 0.7s;
+}
+.start-title {
+  font-size: 2.8rem;
+  color: #fff;
+  font-weight: 800;
+  margin-bottom: 2.5rem;
+  letter-spacing: 1px;
+  text-shadow: 0 4px 24px #0008;
+}
+.start-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  max-width: 400px;
+}
+.start-btn {
+  padding: 2rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 4px 24px #0004;
+  transition: transform 0.15s, box-shadow 0.15s;
+  color: #fff;
+  background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+}
+.start-btn.friend {
+  background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+}
+.start-btn.pass {
+  background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+}
+.start-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 8px 32px #0006;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(32px);}
+  to { opacity: 1; transform: translateY(0);}
+}
