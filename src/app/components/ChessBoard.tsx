@@ -68,6 +68,7 @@ function convertToPieceBoard(board: (string | null)[][]): Board {
 
 interface ChessBoardProps {
   isFlipped: boolean;
+  boardEnabled: boolean;
   gameStarted: boolean;
   onMove: () => void;
   gameMode: 'friend' | 'pass';
@@ -75,6 +76,7 @@ interface ChessBoardProps {
 
 const ChessBoard: React.FC<ChessBoardProps> = ({
   isFlipped,
+  boardEnabled,
   gameStarted,
   onMove,
 //   gameMode,
@@ -243,6 +245,9 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
         // Clear any previous timer
         if (timerRef.current) clearInterval(timerRef.current);
 
+        // Only run timer if gameStarted is true
+        if (!gameStarted) return;
+
         // Only run timer for the current turn
         timerRef.current = setInterval(() => {
             if (currentTurn === "white") {
@@ -312,233 +317,235 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
     }
 
     // --- Enhanced move logic for castling and en passant ---
-    const handleSquareClick = (row: number, col: number) => {
-        const { actualRow, actualCol } = getActualIndices(row, col);
+    const handleSquareClick = boardEnabled
+      ? (row: number, col: number) => {
+          const { actualRow, actualCol } = getActualIndices(row, col);
 
-        // Only allow selecting your own piece on your turn
-        if (!selectedCell) {
-            const pieceChar = board[actualRow]?.[actualCol];
-            if (!pieceChar) {
-                setYellowHighlight({ row: actualRow, col: actualCol });
-                setValidMoves([]);
-                return;
-            }
-            const pieceInfo = unicodeToPiece[pieceChar];
-            if (pieceInfo.color !== currentTurn) {
-                // Not your turn, can't select opponent's piece
-                return;
-            }
-            setSelectedCell({ row: actualRow, col: actualCol });
-            setGreenHighlights({ from: { row: actualRow, col: actualCol }, to: { row: actualRow, col: actualCol } });
-            setYellowHighlight(null);
-            const pieceBoard = convertToPieceBoard(board);
-            const gameState = getGameState(pieceBoard);
-            const moves = pieceMoveFunctions[pieceInfo.type](
-                { x: actualCol, y: actualRow },
-                pieceBoard,
-                pieceInfo.color,
-                gameState
-            );
-            setValidMoves(moves);
-            return;
-        }
+          // Only allow selecting your own piece on your turn
+          if (!selectedCell) {
+              const pieceChar = board[actualRow]?.[actualCol];
+              if (!pieceChar) {
+                  setYellowHighlight({ row: actualRow, col: actualCol });
+                  setValidMoves([]);
+                  return;
+              }
+              const pieceInfo = unicodeToPiece[pieceChar];
+              if (pieceInfo.color !== currentTurn) {
+                  // Not your turn, can't select opponent's piece
+                  return;
+              }
+              setSelectedCell({ row: actualRow, col: actualCol });
+              setGreenHighlights({ from: { row: actualRow, col: actualCol }, to: { row: actualRow, col: actualCol } });
+              setYellowHighlight(null);
+              const pieceBoard = convertToPieceBoard(board);
+              const gameState = getGameState(pieceBoard);
+              const moves = pieceMoveFunctions[pieceInfo.type](
+                  { x: actualCol, y: actualRow },
+                  pieceBoard,
+                  pieceInfo.color,
+                  gameState
+              );
+              setValidMoves(moves);
+              return;
+          }
 
-        // If a piece is already selected, only allow moving if it's your piece
-        const { row: selectedRow, col: selectedCol } = selectedCell;
-        const selectedPieceChar = board[selectedRow][selectedCol];
-        if (!selectedPieceChar) {
-            setSelectedCell(null);
-            setValidMoves([]);
-            return;
-        }
-        const selectedPieceInfo = unicodeToPiece[selectedPieceChar];
-        if (selectedPieceInfo.color !== currentTurn) {
-            setSelectedCell(null);
-            setValidMoves([]);
-            return;
-        }
+          // If a piece is already selected, only allow moving if it's your piece
+          const { row: selectedRow, col: selectedCol } = selectedCell;
+          const selectedPieceChar = board[selectedRow][selectedCol];
+          if (!selectedPieceChar) {
+              setSelectedCell(null);
+              setValidMoves([]);
+              return;
+          }
+          const selectedPieceInfo = unicodeToPiece[selectedPieceChar];
+          if (selectedPieceInfo.color !== currentTurn) {
+              setSelectedCell(null);
+              setValidMoves([]);
+              return;
+          }
 
-        if (isValidMove(actualRow, actualCol)) {
-            // --- Check if move would leave king in check (illegal move) ---
-            if (wouldLeaveKingInCheck(
-                { row: selectedRow, col: selectedCol },
-                { row: actualRow, col: actualCol },
-                selectedPieceInfo,
-                board,
-                enPassantTarget
-            )) {
-                // Trigger red blink on the selected cell
-                setRedBlinkCell({ row: selectedRow, col: selectedCol });
-                if (redBlinkTimeoutRef.current) clearTimeout(redBlinkTimeoutRef.current);
-                redBlinkTimeoutRef.current = setTimeout(() => {
-                    setRedBlinkCell(null);
-                }, 1200); // 0.6s * 2 blinks
-                // Do not change turn or move piece
-                return;
-            }
+          if (isValidMove(actualRow, actualCol)) {
+              // --- Check if move would leave king in check (illegal move) ---
+              if (wouldLeaveKingInCheck(
+                  { row: selectedRow, col: selectedCol },
+                  { row: actualRow, col: actualCol },
+                  selectedPieceInfo,
+                  board,
+                  enPassantTarget
+              )) {
+                  // Trigger red blink on the selected cell
+                  setRedBlinkCell({ row: selectedRow, col: selectedCol });
+                  if (redBlinkTimeoutRef.current) clearTimeout(redBlinkTimeoutRef.current);
+                  redBlinkTimeoutRef.current = setTimeout(() => {
+                      setRedBlinkCell(null);
+                  }, 1200); // 0.6s * 2 blinks
+                  // Do not change turn or move piece
+                  return;
+              }
 
-            // Move logic
-            const pieceChar = board[selectedRow][selectedCol];
-            const pieceInfo = pieceChar ? unicodeToPiece[pieceChar] : null;
-            // const pieceBoard = convertToPieceBoard(board);
+              // Move logic
+              const pieceChar = board[selectedRow][selectedCol];
+              const pieceInfo = pieceChar ? unicodeToPiece[pieceChar] : null;
+              // const pieceBoard = convertToPieceBoard(board);
 
-            // Remove unused assignment: gameState
-            // If you want to use gameState, use it for move validation or pass to move functions.
-            // Otherwise, just remove this line:
-            // const gameState = getGameState(pieceBoard);
+              // Remove unused assignment: gameState
+              // If you want to use gameState, use it for move validation or pass to move functions.
+              // Otherwise, just remove this line:
+              // const gameState = getGameState(pieceBoard);
 
-            // Detect castling
-            let isCastling = false;
-            let rookFrom: Position | null = null;
-            let rookTo: Position | null = null;
+              // Detect castling
+              let isCastling = false;
+              let rookFrom: Position | null = null;
+              let rookTo: Position | null = null;
 
-            if (
-                pieceInfo &&
-                pieceInfo.type === 'king' &&
-                Math.abs(actualCol - selectedCol) === 2
-            ) {
-                isCastling = true;
-                const y = selectedRow;
-                if (actualCol === 6) {
-                    // Kingside
-                    rookFrom = { x: 7, y };
-                    rookTo = { x: 5, y };
-                } else if (actualCol === 2) {
-                    // Queenside
-                    rookFrom = { x: 0, y };
-                    rookTo = { x: 3, y };
-                }
-            }
+              if (
+                  pieceInfo &&
+                  pieceInfo.type === 'king' &&
+                  Math.abs(actualCol - selectedCol) === 2
+              ) {
+                  isCastling = true;
+                  const y = selectedRow;
+                  if (actualCol === 6) {
+                      // Kingside
+                      rookFrom = { x: 7, y };
+                      rookTo = { x: 5, y };
+                  } else if (actualCol === 2) {
+                      // Queenside
+                      rookFrom = { x: 0, y };
+                      rookTo = { x: 3, y };
+                  }
+              }
 
-            // Detect en passant
-            let isEnPassant = false;
-            let capturedPawn: { row: number; col: number } | null = null;
-            if (
-                pieceInfo &&
-                pieceInfo.type === 'pawn' &&
-                enPassantTarget &&
-                actualCol === enPassantTarget.x &&
-                actualRow === enPassantTarget.y
-            ) {
-                isEnPassant = true;
-                capturedPawn = {
-                    row: selectedRow,
-                    col: actualCol,
-                };
-            }
+              // Detect en passant
+              let isEnPassant = false;
+              let capturedPawn: { row: number; col: number } | null = null;
+              if (
+                  pieceInfo &&
+                  pieceInfo.type === 'pawn' &&
+                  enPassantTarget &&
+                  actualCol === enPassantTarget.x &&
+                  actualRow === enPassantTarget.y
+              ) {
+                  isEnPassant = true;
+                  capturedPawn = {
+                      row: selectedRow,
+                      col: actualCol,
+                  };
+              }
 
-            // Build new board after move
-            const newBoard = board.map(row => [...row]);
-            if (isCastling && rookFrom && rookTo) {
-                // Move king
-                newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
-                newBoard[selectedRow][selectedCol] = null;
-                // Move rook
-                newBoard[rookTo.y][rookTo.x] = board[rookFrom.y][rookFrom.x];
-                newBoard[rookFrom.y][rookFrom.x] = null;
-            } else if (isEnPassant && capturedPawn) {
-                // Move pawn
-                newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
-                newBoard[selectedRow][selectedCol] = null;
-                // Remove captured pawn
-                newBoard[capturedPawn.row][capturedPawn.col] = null;
-            } else {
-                // Normal move
-                newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
-                newBoard[selectedRow][selectedCol] = null;
-            }
+              // Build new board after move
+              const newBoard = board.map(row => [...row]);
+              if (isCastling && rookFrom && rookTo) {
+                  // Move king
+                  newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
+                  newBoard[selectedRow][selectedCol] = null;
+                  // Move rook
+                  newBoard[rookTo.y][rookTo.x] = board[rookFrom.y][rookFrom.x];
+                  newBoard[rookFrom.y][rookFrom.x] = null;
+              } else if (isEnPassant && capturedPawn) {
+                  // Move pawn
+                  newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
+                  newBoard[selectedRow][selectedCol] = null;
+                  // Remove captured pawn
+                  newBoard[capturedPawn.row][capturedPawn.col] = null;
+              } else {
+                  // Normal move
+                  newBoard[actualRow][actualCol] = board[selectedRow][selectedCol];
+                  newBoard[selectedRow][selectedCol] = null;
+              }
 
-            // Update hasMoved for king/rook/pawn
-            const newHasMoved = { ...hasMoved };
-            if (pieceInfo) {
-                const fromKey = `${selectedCol},${selectedRow}`;
-                newHasMoved[fromKey] = true;
-                // If castling, also mark rook as moved
-                if (isCastling && rookFrom) {
-                    const rookKey = `${rookFrom.x},${rookFrom.y}`;
-                    newHasMoved[rookKey] = true;
-                }
-            }
+              // Update hasMoved for king/rook/pawn
+              const newHasMoved = { ...hasMoved };
+              if (pieceInfo) {
+                  const fromKey = `${selectedCol},${selectedRow}`;
+                  newHasMoved[fromKey] = true;
+                  // If castling, also mark rook as moved
+                  if (isCastling && rookFrom) {
+                      const rookKey = `${rookFrom.x},${rookFrom.y}`;
+                      newHasMoved[rookKey] = true;
+                  }
+              }
 
-            // Update en passant target
-            let newEnPassantTarget: Position | null = null;
-            if (
-                pieceInfo &&
-                pieceInfo.type === 'pawn' &&
-                Math.abs(actualRow - selectedRow) === 2
-            ) {
-                // Set en passant target square
-                newEnPassantTarget = {
-                    x: selectedCol,
-                    y: (selectedRow + actualRow) / 2,
-                };
-            }
+              // Update en passant target
+              let newEnPassantTarget: Position | null = null;
+              if (
+                  pieceInfo &&
+                  pieceInfo.type === 'pawn' &&
+                  Math.abs(actualRow - selectedRow) === 2
+              ) {
+                  // Set en passant target square
+                  newEnPassantTarget = {
+                      x: selectedCol,
+                      y: (selectedRow + actualRow) / 2,
+                  };
+              }
 
-            // Build move object for history
-            const move: Move = {
-                from: { x: selectedCol, y: selectedRow },
-                to: { x: actualCol, y: actualRow },
-                piece: pieceInfo!,
-                isCastling,
-                isEnPassant,
-                captured: isEnPassant && capturedPawn
-                    ? (board[capturedPawn.row][capturedPawn.col]
-                        ? unicodeToPiece[board[capturedPawn.row][capturedPawn.col]!]
-                        : null)
-                    : (board[actualRow][actualCol]
-                        ? unicodeToPiece[board[actualRow][actualCol]!]
-                        : null),
-            };
+              // Build move object for history
+              const move: Move = {
+                  from: { x: selectedCol, y: selectedRow },
+                  to: { x: actualCol, y: actualRow },
+                  piece: pieceInfo!,
+                  isCastling,
+                  isEnPassant,
+                  captured: isEnPassant && capturedPawn
+                      ? (board[capturedPawn.row][capturedPawn.col]
+                          ? unicodeToPiece[board[capturedPawn.row][capturedPawn.col]!]
+                          : null)
+                      : (board[actualRow][actualCol]
+                          ? unicodeToPiece[board[actualRow][actualCol]!]
+                          : null),
+              };
 
-            setBoard(newBoard);
-            setHasMoved(newHasMoved);
-            setEnPassantTarget(newEnPassantTarget);
-            setMoveHistory([...moveHistory, move]);
-            setGreenHighlights({ from: { row: selectedRow, col: selectedCol }, to: { row: actualRow, col: actualCol } });
-            setSelectedCell(null);
-            setYellowHighlight(null);
-            setValidMoves([]);
+              setBoard(newBoard);
+              setHasMoved(newHasMoved);
+              setEnPassantTarget(newEnPassantTarget);
+              setMoveHistory([...moveHistory, move]);
+              setGreenHighlights({ from: { row: selectedRow, col: selectedCol }, to: { row: actualRow, col: actualCol } });
+              setSelectedCell(null);
+              setYellowHighlight(null);
+              setValidMoves([]);
 
-            // --- Timer and move list/capture updates ---
-            updateMoveList(move);
-            updateCapturedPieces(move);
+              // --- Timer and move list/capture updates ---
+              updateMoveList(move);
+              updateCapturedPieces(move);
 
-            // Switch turn after a valid move (timer handled by useEffect)
-            setCurrentTurn(currentTurn === 'white' ? 'black' : 'white');
-            // After a valid move:
-            if (onMove) onMove();
-        } else if (board[actualRow]?.[actualCol]) {
-            // Only allow selecting your own piece
-            const pieceChar = board[actualRow][actualCol];
-            if (!pieceChar) return;
-            const pieceInfo = unicodeToPiece[pieceChar];
-            if (pieceInfo.color !== currentTurn) return;
-            setSelectedCell({ row: actualRow, col: actualCol });
-            setGreenHighlights({ from: { row: actualRow, col: actualCol }, to: { row: actualRow, col: actualCol } });
-            setYellowHighlight(null);
-            const pieceBoard = convertToPieceBoard(board);
-            const gameState = getGameState(pieceBoard);
-            const moves = pieceMoveFunctions[pieceInfo.type](
-                { x: actualCol, y: actualRow },
-                pieceBoard,
-                pieceInfo.color,
-                gameState
-            );
-            setValidMoves(moves);
-        } else {
-            // Attempted to move to an invalid square (illegal move)
-            if (selectedCell) {
-                setRedBlinkCell({ row: selectedCell.row, col: selectedCell.col });
-                if (redBlinkTimeoutRef.current) clearTimeout(redBlinkTimeoutRef.current);
-                redBlinkTimeoutRef.current = setTimeout(() => {
-                    setRedBlinkCell(null);
-                }, 1200);
-            }
-            setSelectedCell(null);
-            setYellowHighlight({ row: actualRow, col: actualCol });
-            setValidMoves([]);
-        }
-    };
+              // Switch turn after a valid move (timer handled by useEffect)
+              setCurrentTurn(currentTurn === 'white' ? 'black' : 'white');
+              // After a valid move:
+              if (onMove) onMove();
+          } else if (board[actualRow]?.[actualCol]) {
+              // Only allow selecting your own piece
+              const pieceChar = board[actualRow][actualCol];
+              if (!pieceChar) return;
+              const pieceInfo = unicodeToPiece[pieceChar];
+              if (pieceInfo.color !== currentTurn) return;
+              setSelectedCell({ row: actualRow, col: actualCol });
+              setGreenHighlights({ from: { row: actualRow, col: actualCol }, to: { row: actualRow, col: actualCol } });
+              setYellowHighlight(null);
+              const pieceBoard = convertToPieceBoard(board);
+              const gameState = getGameState(pieceBoard);
+              const moves = pieceMoveFunctions[pieceInfo.type](
+                  { x: actualCol, y: actualRow },
+                  pieceBoard,
+                  pieceInfo.color,
+                  gameState
+              );
+              setValidMoves(moves);
+          } else {
+              // Attempted to move to an invalid square (illegal move)
+              if (selectedCell) {
+                  setRedBlinkCell({ row: selectedCell.row, col: selectedCell.col });
+                  if (redBlinkTimeoutRef.current) clearTimeout(redBlinkTimeoutRef.current);
+                  redBlinkTimeoutRef.current = setTimeout(() => {
+                      setRedBlinkCell(null);
+                  }, 1200);
+              }
+              setSelectedCell(null);
+              setYellowHighlight({ row: actualRow, col: actualCol });
+              setValidMoves([]);
+          }
+      }
+      : () => {};
 
     const flipBoard = () => {
         // setIsFlipped(!isFlipped); // Remove this, as isFlipped is a prop
@@ -616,7 +623,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
             {/* Left: Chessboard */}
             <div className="chessboard-panel">
                 <div className="chess-container">
-                    <div className="chess-board">
+                    <div className={`chess-board${!boardEnabled ? ' disabled' : ''}`}>
                         {(isFlipped ? [...board].reverse() : board).map((row, rowIndex) =>
                             (isFlipped ? [...row].reverse() : row).map((square, colIndex) => {
                                 const { actualRow, actualCol } = getActualIndices(rowIndex, colIndex);

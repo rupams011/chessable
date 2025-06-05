@@ -10,9 +10,9 @@ export default function GamePage({
   onBack,
 }: {
   gameMode: 'friend' | 'pass';
-  onBack?: () => void;
+  onBack: () => void;
 }) {
-  const [gameStarted, setGameStarted] = useState(false);
+  const [gameActive, setGameActive] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const router = useRouter();
 
@@ -33,24 +33,29 @@ export default function GamePage({
   return (
     <div className="game-page">
       <div className="game-header-fixed">
-        <button className="back-btn" onClick={handleBack}>← Back</button>
+        <button className="back-btn" onClick={onBack}>← Back</button>
         <span className="game-title">Chess Game</span>
         <div />
       </div>
-      {!gameStarted && (
-        <div className="start-game-btn-row">
-          <button
-            className="start-game-btn"
-            onClick={() => setGameStarted(true)}
-          >
-            Start Game
-          </button>
-        </div>
-      )}
+      <div className="button-row">
+        <button
+          className="main-action-btn"
+          onClick={() => setGameActive((active) => !active)}
+        >
+          {gameActive ? 'Stop Game' : 'Start Game'}
+        </button>
+        <button
+          className="main-action-btn"
+          onClick={() => setIsFlipped((f) => !f)}
+        >
+          Flip Board
+        </button>
+      </div>
       <div className="game-board-area">
         <ChessBoard
           isFlipped={isFlipped}
-          gameStarted={gameStarted}
+          boardEnabled={gameActive}
+          gameStarted={gameActive}
           onMove={handleMove}
           gameMode={gameMode}
         />

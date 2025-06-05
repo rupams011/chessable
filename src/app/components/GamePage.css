@@ -44,6 +44,31 @@
   cursor: not-allowed;
 }
 
+.button-row {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  z-index: 2;
+  position: relative;
+}
+.main-action-btn {
+  padding: 1.2rem 2.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #ffb347 0%, #ffcc33 100%);
+  color: #232526;
+  box-shadow: 0 4px 24px #0004;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.main-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .game-title {
   color: #fff;
   font-size: 2rem;
