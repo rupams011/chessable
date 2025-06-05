@@ -547,17 +547,6 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
       }
       : () => {};
 
-    const flipBoard = () => {
-        // setIsFlipped(!isFlipped); // Remove this, as isFlipped is a prop
-        setYellowHighlight(null);
-        if (selectedCell) {
-            setSelectedCell({
-                row: 7 - selectedCell.row,
-                col: 7 - selectedCell.col,
-            });
-        }
-    };
-
     // Helper to flip captured pieces and clocks order
     function renderInfoLeft() {
         // If not flipped: opponent clock, opponent captures, separator, player captures, player clock
@@ -671,9 +660,6 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
                             })
                         )}
                     </div>
-                    <button className="flip-button" onClick={flipBoard}>
-                        Flip Board
-                    </button>
                 </div>
             </div>
 

@@ -21,15 +21,6 @@ export default function GamePage({
     if (gameMode === 'pass') setIsFlipped((f) => !f);
   };
 
-  // Use router.push for navigation, fallback to onBack if provided
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      router.push('/');
-    }
-  };
-
   return (
     <div className="game-page">
       <div className="game-header-fixed">
