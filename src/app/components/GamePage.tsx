@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import ChessBoard from './ChessBoard';
 import './GamePage.css';
 
@@ -14,7 +13,6 @@ export default function GamePage({
 }) {
   const [gameActive, setGameActive] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
-  const router = useRouter();
 
   // Flip board after each move in Pass and Play mode
   const handleMove = () => {
