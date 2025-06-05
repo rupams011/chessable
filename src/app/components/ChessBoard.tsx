@@ -72,6 +72,7 @@ interface ChessBoardProps {
   gameStarted: boolean;
   onMove: () => void;
   gameMode: 'friend' | 'pass';
+  onTimerZero?: (who: 'white' | 'black') => void;
 }
 
 const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -80,6 +81,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
   gameStarted,
   onMove,
 //   gameMode,
+  onTimerZero,
 }) => {
     // Initial board setup with pieces
     const initialBoard = [
@@ -242,25 +244,29 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
 
     // --- Timer logic ---
     useEffect(() => {
-        // Clear any previous timer
+        if (!gameStarted) return;
         if (timerRef.current) clearInterval(timerRef.current);
 
-        // Only run timer if gameStarted is true
-        if (!gameStarted) return;
-
-        // Only run timer for the current turn
         timerRef.current = setInterval(() => {
             if (currentTurn === "white") {
-                setPlayerTime((t) => (t > 0 ? t - 1 : 0));
+                setPlayerTime((t) => {
+                    if (t > 0) return t - 1;
+                    if (t === 0 && onTimerZero) onTimerZero('white');
+                    return 0;
+                });
             } else {
-                setOpponentTime((t) => (t > 0 ? t - 1 : 0));
+                setOpponentTime((t) => {
+                    if (t > 0) return t - 1;
+                    if (t === 0 && onTimerZero) onTimerZero('black');
+                    return 0;
+                });
             }
         }, 1000);
 
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [currentTurn, gameStarted]);
+    }, [currentTurn, gameStarted, onTimerZero]);
 
     // --- Move list update logic ---
     // Call this after every valid move

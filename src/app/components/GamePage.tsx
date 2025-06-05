@@ -14,6 +14,13 @@ export default function GamePage({
   const [gameActive, setGameActive] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [autoFlip, setAutoFlip] = useState(true);
+  const [winner, setWinner] = useState<null | 'white' | 'black'>(null);
+
+  // Handler to receive timer state from ChessBoard
+  const handleTimerZero = (who: 'white' | 'black') => {
+    setGameActive(false);
+    setWinner(who === 'white' ? 'black' : 'white');
+  };
 
   // Flip board after each move in Pass and Play mode if autoFlip is enabled
   const handleMove = () => {
@@ -30,7 +37,13 @@ export default function GamePage({
       <div className="button-row">
         <button
           className="main-action-btn"
-          onClick={() => setGameActive((active) => !active)}
+          onClick={() => {
+            setGameActive((active) => {
+              if (active) setWinner(null);
+              return !active;
+            });
+          }}
+          disabled={!!winner}
         >
           {gameActive ? 'Stop Game' : 'Start Game'}
         </button>
@@ -52,14 +65,20 @@ export default function GamePage({
           </span>
         </label>
       </div>
-      <div className="game-board-area">
+      <div className="game-board-area" style={{ position: 'relative' }}>
         <ChessBoard
           isFlipped={isFlipped}
-          boardEnabled={gameActive}
+          boardEnabled={gameActive && !winner}
           gameStarted={gameActive}
           onMove={handleMove}
           gameMode={gameMode}
+          onTimerZero={handleTimerZero}
         />
+        {winner && (
+          <div className="winner-label">
+            {winner === 'white' ? 'White' : 'Black'} wins on time!
+          </div>
+        )}
       </div>
     </div>
   );
