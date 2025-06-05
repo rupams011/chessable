@@ -13,10 +13,11 @@ export default function GamePage({
 }) {
   const [gameActive, setGameActive] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [autoFlip, setAutoFlip] = useState(true);
 
-  // Flip board after each move in Pass and Play mode
+  // Flip board after each move in Pass and Play mode if autoFlip is enabled
   const handleMove = () => {
-    if (gameMode === 'pass') setIsFlipped((f) => !f);
+    if (gameMode === 'pass' && autoFlip) setIsFlipped((f) => !f);
   };
 
   return (
@@ -39,6 +40,17 @@ export default function GamePage({
         >
           Flip Board
         </button>
+        <label className="flip-toggle">
+          <input
+            type="checkbox"
+            checked={autoFlip}
+            onChange={() => setAutoFlip((v) => !v)}
+          />
+          <span className="flip-toggle-slider" />
+          <span className="flip-toggle-label">
+            {autoFlip ? 'Auto Flip' : 'Manual Flip'}
+          </span>
+        </label>
       </div>
       <div className="game-board-area">
         <ChessBoard

@@ -51,6 +51,7 @@
   margin-bottom: 1.5rem;
   z-index: 2;
   position: relative;
+  flex-wrap: wrap;
 }
 .main-action-btn {
   padding: 1.2rem 2.5rem;
@@ -67,6 +68,50 @@
 .main-action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Toggle Switch Styles */
+.flip-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  user-select: none;
+}
+.flip-toggle input {
+  display: none;
+}
+.flip-toggle-slider {
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  position: relative;
+  margin-right: 0.7rem;
+  transition: background 0.2s;
+}
+.flip-toggle input:checked + .flip-toggle-slider {
+  background: #ffcc33;
+}
+.flip-toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.flip-toggle input:checked + .flip-toggle-slider::before {
+  transform: translateX(20px);
+}
+.flip-toggle-label {
+  font-size: 1.1rem;
+  color: #fff;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .game-title {
