@@ -15,7 +15,7 @@ export default function StartPage({ onSelectMode }: { onSelectMode: (mode: 'frie
 
   return (
     <div className="start-page fade-in" ref={rootRef}>
-      <h1 className="start-title">Let's play a game of Chess</h1>
+      <h1 className="start-title">Let&apos;s play a game of Chess</h1>
       <div className="start-buttons">
         <button className="start-btn friend" onClick={() => handleClick('friend')}>
           Play a Friend Online
