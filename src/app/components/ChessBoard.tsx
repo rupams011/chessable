@@ -39,33 +39,6 @@ function convertToPieceBoard(board: (string | null)[][]): Board {
     );
 }
 
-// Helper: Convert board of Piece | null to board of strings (used for FEN, debugging, or export)
-// function convertToStringBoard(board: Board): (string | null)[][] {
-//     const pieceToUnicode: Record<Color, Record<PieceType, string>> = {
-//         white: {
-//             pawn: '♙',
-//             rook: '♖',
-//             knight: '♘',
-//             bishop: '♗',
-//             queen: '♕',
-//             king: '♔',
-//         },
-//         black: {
-//             pawn: '♟',
-//             rook: '♜',
-//             knight: '♞',
-//             bishop: '♝',
-//             queen: '♛',
-//             king: '♚',
-//         },
-//     };
-//     return board.map(row =>
-//         row.map(cell =>
-//             cell ? pieceToUnicode[cell.color][cell.type] : null
-//         )
-//     );
-// }
-
 interface ChessBoardProps {
   isFlipped: boolean;
   boardEnabled: boolean;
@@ -73,6 +46,9 @@ interface ChessBoardProps {
   onMove: () => void;
   gameMode: 'friend' | 'pass';
   onTimerZero?: (who: 'white' | 'black') => void;
+  playerName?: string;
+  opponentName?: string;
+  initialMinutes?: number;
 }
 
 const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -82,6 +58,9 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
   onMove,
 //   gameMode,
   onTimerZero,
+  playerName = 'White',
+  opponentName = 'Black',
+  initialMinutes = 10,
 }) => {
     // Initial board setup with pieces
     const initialBoard = [
@@ -115,7 +94,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
     const [currentTurn, setCurrentTurn] = useState<Color>('white');
 
     // Add timer and move list state
-    const INITIAL_TIME = 10 * 60; // 10 minutes in seconds
+    const INITIAL_TIME = initialMinutes * 60; // 10 minutes in seconds
 
     const [playerTime, setPlayerTime] = useState(INITIAL_TIME); // White
     const [opponentTime, setOpponentTime] = useState(INITIAL_TIME); // Black
@@ -249,11 +228,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
 
         timerRef.current = setInterval(() => {
             if (currentTurn === "white") {
-                setPlayerTime((t) => {
-                    if (t > 0) return t - 1;
-                    if (t === 0 && onTimerZero) onTimerZero('white');
-                    return 0;
-                });
+                setPlayerTime((t) => (t > 0 ? t - 1 : 0));
             } else {
                 setOpponentTime((t) => {
                     if (t > 0) return t - 1;
@@ -267,6 +242,25 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [currentTurn, gameStarted, onTimerZero]);
+
+    // Reset timers when a new game starts or initialMinutes changes
+    useEffect(() => {
+        if (gameStarted) {
+            setPlayerTime(initialMinutes * 60);
+            setOpponentTime(initialMinutes * 60);
+        }
+    }, [gameStarted, initialMinutes]);
+
+    // Notify when timer reaches zero
+    useEffect(() => {
+      if (playerTime === 0 && gameStarted && onTimerZero) {
+        onTimerZero('white');
+      }
+      if (opponentTime === 0 && gameStarted && onTimerZero) {
+        onTimerZero('black');
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [playerTime, opponentTime, gameStarted]);
 
     // --- Move list update logic ---
     // Call this after every valid move
@@ -553,66 +547,6 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
       }
       : () => {};
 
-    // Helper to flip captured pieces and clocks order
-    function renderInfoLeft() {
-        // If not flipped: opponent clock, opponent captures, separator, player captures, player clock
-        // If flipped: player clock, player captures, separator, opponent captures, opponent clock
-        if (!isFlipped) {
-            return (
-                <>
-                    <div className="clock opponent-clock">Opponent: {formatClock(opponentTime)}</div>
-                    <div className="captured-pieces captured-by-opponent">
-                        {capturedByOpponent.length === 0 ? (
-                            <span className="captured-placeholder">No captures</span>
-                        ) : (
-                            capturedByOpponent.map((piece, idx) => (
-                                <span className="captured-piece" key={idx}>{piece}</span>
-                            ))
-                        )}
-                    </div>
-                    <div className="info-separator" />
-                    <div className="captured-pieces captured-by-player">
-                        {capturedByPlayer.length === 0 ? (
-                            <span className="captured-placeholder">No captures</span>
-                        ) : (
-                            capturedByPlayer.map((piece, idx) => (
-                                <span className="captured-piece" key={idx}>{piece}</span>
-                            ))
-                        )}
-                    </div>
-                    <div className="clock player-clock">You: {formatClock(playerTime)}</div>
-                </>
-            );
-        } else {
-            // Flipped order
-            return (
-                <>
-                    <div className="clock player-clock">You: {formatClock(playerTime)}</div>
-                    <div className="captured-pieces captured-by-player">
-                        {capturedByPlayer.length === 0 ? (
-                            <span className="captured-placeholder">No captures</span>
-                        ) : (
-                            capturedByPlayer.map((piece, idx) => (
-                                <span className="captured-piece" key={idx}>{piece}</span>
-                            ))
-                        )}
-                    </div>
-                    <div className="info-separator" />
-                    <div className="captured-pieces captured-by-opponent">
-                        {capturedByOpponent.length === 0 ? (
-                            <span className="captured-placeholder">No captures</span>
-                        ) : (
-                            capturedByOpponent.map((piece, idx) => (
-                                <span className="captured-piece" key={idx}>{piece}</span>
-                            ))
-                        )}
-                    </div>
-                    <div className="clock opponent-clock">Opponent: {formatClock(opponentTime)}</div>
-                </>
-            );
-        }
-    }
-
     return (
         <div className="chess-layout">
             {/* Left: Chessboard */}
@@ -673,7 +607,56 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
             <div className="info-panel">
                 {/* Left partition (2/3) */}
                 <div className="info-left">
-                    {renderInfoLeft()}
+                  {/* If not flipped */}
+                  {!isFlipped ? (
+                    <>
+                      <div className="clock opponent-clock">{opponentName}: {formatClock(opponentTime)}</div>
+                      <div className="captured-pieces captured-by-opponent">
+                          {capturedByOpponent.length === 0 ? (
+                              <span className="captured-placeholder">No captures</span>
+                          ) : (
+                              capturedByOpponent.map((piece, idx) => (
+                                  <span className="captured-piece" key={idx}>{piece}</span>
+                              ))
+                          )}
+                      </div>
+                      <div className="info-separator" />
+                      <div className="captured-pieces captured-by-player">
+                          {capturedByPlayer.length === 0 ? (
+                              <span className="captured-placeholder">No captures</span>
+                          ) : (
+                              capturedByPlayer.map((piece, idx) => (
+                                  <span className="captured-piece" key={idx}>{piece}</span>
+                              ))
+                          )}
+                      </div>
+                      <div className="clock player-clock">{playerName}: {formatClock(playerTime)}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="clock player-clock">{playerName}: {formatClock(playerTime)}</div>
+                      <div className="captured-pieces captured-by-player">
+                          {capturedByPlayer.length === 0 ? (
+                              <span className="captured-placeholder">No captures</span>
+                          ) : (
+                              capturedByPlayer.map((piece, idx) => (
+                                  <span className="captured-piece" key={idx}>{piece}</span>
+                              ))
+                          )}
+                      </div>
+                      <div className="info-separator" />
+                      <div className="captured-pieces captured-by-opponent">
+                          {capturedByOpponent.length === 0 ? (
+                              <span className="captured-placeholder">No captures</span>
+                          ) : (
+                              capturedByOpponent.map((piece, idx) => (
+                                  <span className="captured-piece" key={idx}>{piece}</span>
+                              ))
+                          )}
+                      </div>
+                      <div className="clock opponent-clock">{opponentName}: {formatClock(opponentTime)}</div>
+                    </>
+                  )}
                 </div>
                 {/* Right partition (1/3) */}
                 <div className="info-right">

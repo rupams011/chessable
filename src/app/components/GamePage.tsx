@@ -16,6 +16,17 @@ export default function GamePage({
   const [autoFlip, setAutoFlip] = useState(true);
   const [winner, setWinner] = useState<null | 'white' | 'black'>(null);
 
+  // Editable player names and time (before game starts)
+  const [editPlayerName, setEditPlayerName] = useState('White');
+  const [editOpponentName, setEditOpponentName] = useState('Black');
+  const [editMinutes, setEditMinutes] = useState(10);
+
+  // Once the game is started, these are fixed
+  const [playerName, setPlayerName] = useState('White');
+  const [opponentName, setOpponentName] = useState('Black');
+  const [initialMinutes, setInitialMinutes] = useState(10);
+  const [namesLocked, setNamesLocked] = useState(false);
+
   // Handler to receive timer state from ChessBoard
   const handleTimerZero = (who: 'white' | 'black') => {
     setGameActive(false);
@@ -27,6 +38,18 @@ export default function GamePage({
     if (gameMode === 'pass' && autoFlip) setIsFlipped((f) => !f);
   };
 
+  // When starting the game, set names and time (only once)
+  const handleStartGame = () => {
+    if (!namesLocked) {
+      setPlayerName(editPlayerName.trim() || 'White');
+      setOpponentName(editOpponentName.trim() || 'Black');
+      setInitialMinutes(editMinutes);
+      setNamesLocked(true);
+    }
+    setGameActive(true);
+    setWinner(null);
+  };
+
   return (
     <div className="game-page">
       <div className="game-header-fixed">
@@ -35,13 +58,40 @@ export default function GamePage({
         <div />
       </div>
       <div className="button-row">
+        {!namesLocked && (
+          <div className="edit-fields">
+            <input
+              className="edit-input"
+              value={editPlayerName}
+              onChange={e => setEditPlayerName(e.target.value)}
+              placeholder="White player name"
+              maxLength={16}
+            />
+            <input
+              className="edit-input"
+              value={editOpponentName}
+              onChange={e => setEditOpponentName(e.target.value)}
+              placeholder="Black player name"
+              maxLength={16}
+            />
+            <input
+              className="edit-input"
+              type="number"
+              min={1}
+              max={60}
+              value={editMinutes}
+              onChange={e => setEditMinutes(Number(e.target.value))}
+              style={{ width: 70 }}
+              aria-label="Minutes per player"
+            />
+            <span className="edit-label">min</span>
+          </div>
+        )}
         <button
           className="main-action-btn"
           onClick={() => {
-            setGameActive((active) => {
-              if (active) setWinner(null);
-              return !active;
-            });
+            if (!gameActive) handleStartGame();
+            else setGameActive(false);
           }}
           disabled={!!winner}
         >
@@ -73,10 +123,13 @@ export default function GamePage({
           onMove={handleMove}
           gameMode={gameMode}
           onTimerZero={handleTimerZero}
+          playerName={playerName}
+          opponentName={opponentName}
+          initialMinutes={initialMinutes}
         />
         {winner && (
           <div className="winner-label">
-            {winner === 'white' ? 'White' : 'Black'} wins on time!
+            {winner === 'white' ? playerName : opponentName} wins on time!
           </div>
         )}
       </div>

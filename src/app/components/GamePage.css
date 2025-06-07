@@ -52,6 +52,7 @@
   z-index: 2;
   position: relative;
   flex-wrap: wrap;
+  align-items: center;
 }
 .main-action-btn {
   padding: 1.2rem 2.5rem;
@@ -142,6 +143,33 @@
   align-items: flex-start;
   z-index: 1;
   position: relative;
+}
+.edit-fields {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+.edit-input {
+  padding: 0.6rem 1rem;
+  border-radius: 0.7rem;
+  border: 1px solid #bbb;
+  font-size: 1.1rem;
+  outline: none;
+  min-width: 110px;
+  background: #fff;
+  color: #232526;
+  box-shadow: 0 2px 8px #0001;
+  transition: border 0.15s;
+}
+.edit-input:focus {
+  border: 1.5px solid #ffcc33;
+}
+.edit-label {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-left: -0.5rem;
 }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(32px);}
